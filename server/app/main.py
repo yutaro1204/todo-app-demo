@@ -5,7 +5,7 @@ FastAPI application entry point for TODO App Demo Server.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from app.api import auth_router
+from app.api import auth_router, todos_router
 
 # Create FastAPI application instance
 app = FastAPI(
@@ -79,6 +79,7 @@ async def root():
 
 # Register API routers
 app.include_router(auth_router)
+app.include_router(todos_router)
 
 
 # Startup event

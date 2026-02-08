@@ -7,8 +7,10 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.models.user import User
 from app.services.auth_service import AuthService
+from app.services.todo_service import TodoService
 from app.repositories.user_repository import UserRepository
 from app.repositories.session_repository import SessionRepository
+from app.repositories.todo_repository import TodoRepository
 from app.core.exceptions import SessionNotFoundError, SessionExpiredError
 
 
@@ -62,3 +64,17 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
         )
+
+
+def get_todo_service(db: Session = Depends(get_db)) -> TodoService:
+    """
+    Dependency to create TodoService instance.
+
+    Args:
+        db: Database session
+
+    Returns:
+        TodoService instance
+    """
+    todo_repo = TodoRepository(db)
+    return TodoService(todo_repo)

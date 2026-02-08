@@ -31,3 +31,15 @@ class UnauthorizedError(Exception):
     """Raised when user is not authorized to perform an action."""
 
     pass
+
+
+class TodoNotFoundError(Exception):
+    """Raised when a TODO is not found."""
+
+    pass
+
+
+class UnauthorizedAccessError(Exception):
+    """Raised when user attempts to access a resource they don't own."""
+
+    pass
