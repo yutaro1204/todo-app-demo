@@ -810,42 +810,123 @@ For detailed information, refer to:
 
 ---
 
+## API Endpoints Available
+
+Once the server is running, the following endpoints are available:
+
+- **Root**: http://localhost:8000/ - API information and welcome message
+- **Health Check**: http://localhost:8000/health - Service health status
+- **Swagger UI**: http://localhost:8000/docs - Interactive API documentation
+- **ReDoc**: http://localhost:8000/redoc - Alternative API documentation
+
+### Authentication Endpoints (To be implemented)
+- `POST /api/auth/signup` - User registration
+- `POST /api/auth/signin` - User login (returns session token)
+- `POST /api/auth/signout` - User logout
+
+### TODO Endpoints (To be implemented)
+- `GET /api/todos` - List user's TODOs
+- `GET /api/todos/:id` - Get single TODO
+- `POST /api/todos` - Create new TODO
+- `PUT /api/todos/:id` - Update TODO
+- `DELETE /api/todos/:id` - Delete TODO
+
+### Tag Endpoints (To be implemented)
+- `GET /api/tags` - List user's tags
+- `POST /api/tags` - Create new tag
+
+---
+
 ## Quick Commands Reference
+
+### Docker Compose (Recommended)
+
+```bash
+# Build and start all services
+docker compose build
+docker compose up -d
+
+# View logs
+docker compose logs -f app              # FastAPI logs
+docker compose logs -f postgres         # PostgreSQL logs
+docker compose logs -f                  # All logs
+
+# Check status
+docker compose ps
+
+# Stop services
+docker compose down                     # Stop and remove containers
+docker compose down -v                  # Also remove volumes (database data)
+
+# Restart services
+docker compose restart app              # Restart FastAPI only
+docker compose restart                  # Restart all services
+
+# Execute commands in containers
+docker compose exec app bash            # Shell access to app container
+docker compose exec app pytest          # Run tests
+docker compose exec app alembic upgrade head  # Run migrations
+docker compose exec postgres psql -U todoapp todoapp_dev  # PostgreSQL shell
+```
+
+### Local Development (Without Docker)
 
 ```bash
 # Setup
 python3.11 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-docker-compose up -d postgres
+docker compose up -d postgres           # Start PostgreSQL only
 cp .env.example .env
 alembic upgrade head
 
 # Development
-uvicorn app.main:app --reload               # Start dev server
-docker-compose up -d                        # Start PostgreSQL
-docker-compose logs -f postgres             # View logs
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000  # Start dev server
+```
 
-# Database
+### Database Commands
+
+```bash
+# With Docker
+docker compose exec app alembic revision --autogenerate -m "msg"  # Create migration
+docker compose exec app alembic upgrade head                      # Apply migrations
+docker compose exec app alembic downgrade -1                      # Rollback one migration
+
+# Local (without Docker)
 alembic revision --autogenerate -m "msg"    # Create migration
 alembic upgrade head                        # Apply migrations
 alembic downgrade -1                        # Rollback one migration
+```
 
-# Code Quality
+### Code Quality
+
+```bash
+# With Docker
+docker compose exec app ruff format .       # Format code
+docker compose exec app ruff check .        # Lint code
+docker compose exec app mypy app/           # Type check
+
+# Local (without Docker)
 ruff format .                               # Format code
 ruff check .                                # Lint code
 mypy app/                                   # Type check
+```
 
-# Testing
+### Testing
+
+```bash
+# With Docker
+docker compose exec app pytest                              # Run all tests
+docker compose exec app pytest -v                           # Verbose output
+docker compose exec app pytest --cov=app --cov-report=html  # Coverage report
+docker compose exec app pytest -k test_name                 # Run specific test
+
+# Local (without Docker)
 pytest                                      # Run all tests
 pytest -v                                   # Verbose output
 pytest --cov=app --cov-report=html         # Coverage report
 pytest -k test_name                        # Run specific test
-
-# API Documentation
-# http://localhost:8000/docs               # Swagger UI
-# http://localhost:8000/redoc              # ReDoc
 ```
 
 ---
 
-**Last Updated**: 2026-02-07
+**Last Updated**: 2026-02-08
