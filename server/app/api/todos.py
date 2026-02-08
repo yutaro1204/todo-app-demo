@@ -3,13 +3,41 @@ Todo API endpoints.
 """
 
 from fastapi import APIRouter, Depends, status, HTTPException, Query
-from app.schemas.todo import TodoResponse
+from app.schemas.todo import TodoResponse, TodoCreate
 from app.services.todo_service import TodoService
 from app.api.deps import get_current_user, get_todo_service
 from app.models.user import User
 from app.core.exceptions import TodoNotFoundError, UnauthorizedAccessError
 
 router = APIRouter(prefix="/api/todos", tags=["todos"])
+
+
+@router.post("/", response_model=TodoResponse, status_code=status.HTTP_201_CREATED)
+async def create_todo(
+    todo_data: TodoCreate,
+    current_user: User = Depends(get_current_user),
+    todo_service: TodoService = Depends(get_todo_service),
+) -> TodoResponse:
+    """
+    Create a new TODO for the authenticated user.
+
+    - **title**: TODO title (required, 1-200 chars)
+    - **description**: Optional description (max 2000 chars)
+    - **status**: TODO status (default: pending)
+    - **starts_date**: Optional start date
+    - **expires_date**: Optional expiration date (must be after starts_date)
+    - **tag_ids**: Optional list of tag IDs to associate
+
+    Returns the created TODO with generated ID and timestamps.
+    """
+    try:
+        todo = todo_service.create_todo(current_user.id, todo_data)
+        return todo
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
 
 
 @router.get("/", response_model=list[TodoResponse])

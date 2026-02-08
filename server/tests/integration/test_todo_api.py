@@ -332,3 +332,245 @@ class TestListTodos:
         assert response.status_code == 200
         todos = response.json()
         assert todos == []
+
+
+class TestCreateTodo:
+    """Tests for POST /api/todos endpoint."""
+
+    def test_create_todo_minimal(self, authenticated_client, test_user):
+        """Test creating a TODO with minimal required data."""
+        # Act
+        response = authenticated_client.post(
+            "/api/todos",
+            json={"title": "Buy groceries"}
+        )
+
+        # Assert
+        assert response.status_code == 201
+        todo = response.json()
+        assert todo["title"] == "Buy groceries"
+        assert todo["status"] == "pending"  # Default
+        assert todo["description"] is None
+        assert todo["user_id"] == test_user.id
+        assert "id" in todo
+        assert "created_at" in todo
+        assert "updated_at" in todo
+        assert todo["tags"] == []
+
+    def test_create_todo_full_data(self, authenticated_client, test_user, test_tags):
+        """Test creating a TODO with all fields."""
+        # Act
+        response = authenticated_client.post(
+            "/api/todos",
+            json={
+                "title": "Complete project",
+                "description": "Finish the TODO app implementation",
+                "status": "in_progress",
+                "starts_date": "2026-02-08T10:00:00Z",
+                "expires_date": "2026-02-15T18:00:00Z",
+                "tag_ids": [test_tags[0].id, test_tags[1].id]
+            }
+        )
+
+        # Assert
+        assert response.status_code == 201
+        todo = response.json()
+        assert todo["title"] == "Complete project"
+        assert todo["description"] == "Finish the TODO app implementation"
+        assert todo["status"] == "in_progress"
+        assert todo["user_id"] == test_user.id
+        assert len(todo["tags"]) == 2
+        tag_names = [tag["name"] for tag in todo["tags"]]
+        assert "Work" in tag_names
+        assert "Personal" in tag_names
+
+    def test_create_todo_with_single_tag(self, authenticated_client, test_tags):
+        """Test creating a TODO with a single tag."""
+        # Act
+        response = authenticated_client.post(
+            "/api/todos",
+            json={
+                "title": "Tagged task",
+                "tag_ids": [test_tags[0].id]
+            }
+        )
+
+        # Assert
+        assert response.status_code == 201
+        todo = response.json()
+        assert len(todo["tags"]) == 1
+        assert todo["tags"][0]["name"] == "Work"
+
+    def test_create_todo_unauthenticated(self, client):
+        """Test that unauthenticated request returns 401."""
+        # Act
+        response = client.post(
+            "/api/todos",
+            json={"title": "Test TODO"}
+        )
+
+        # Assert
+        assert response.status_code == 401
+
+    def test_create_todo_missing_title(self, authenticated_client):
+        """Test that missing required title returns 422."""
+        # Act
+        response = authenticated_client.post("/api/todos", json={})
+
+        # Assert
+        assert response.status_code == 422
+        error = response.json()
+        assert "detail" in error
+
+    def test_create_todo_empty_title(self, authenticated_client):
+        """Test that empty title returns 422."""
+        # Act
+        response = authenticated_client.post(
+            "/api/todos",
+            json={"title": ""}
+        )
+
+        # Assert
+        assert response.status_code == 422
+
+    def test_create_todo_title_too_long(self, authenticated_client):
+        """Test that title longer than 200 chars returns 422."""
+        # Act
+        response = authenticated_client.post(
+            "/api/todos",
+            json={"title": "x" * 201}
+        )
+
+        # Assert
+        assert response.status_code == 422
+
+    def test_create_todo_description_too_long(self, authenticated_client):
+        """Test that description longer than 2000 chars returns 422."""
+        # Act
+        response = authenticated_client.post(
+            "/api/todos",
+            json={
+                "title": "Valid title",
+                "description": "x" * 2001
+            }
+        )
+
+        # Assert
+        assert response.status_code == 422
+
+    def test_create_todo_invalid_status(self, authenticated_client):
+        """Test that invalid status value returns 422."""
+        # Act
+        response = authenticated_client.post(
+            "/api/todos",
+            json={
+                "title": "Test TODO",
+                "status": "invalid_status"
+            }
+        )
+
+        # Assert
+        assert response.status_code == 422
+
+    def test_create_todo_expires_before_starts(self, authenticated_client):
+        """Test that expires_date before starts_date returns 422."""
+        # Act
+        response = authenticated_client.post(
+            "/api/todos",
+            json={
+                "title": "Invalid dates",
+                "starts_date": "2026-02-15T10:00:00Z",
+                "expires_date": "2026-02-08T10:00:00Z"
+            }
+        )
+
+        # Assert
+        assert response.status_code == 422
+        error = response.json()
+        assert "expires_date" in str(error).lower()
+
+    def test_create_todo_with_dates(self, authenticated_client):
+        """Test creating a TODO with valid start and end dates."""
+        # Act
+        response = authenticated_client.post(
+            "/api/todos",
+            json={
+                "title": "Dated task",
+                "starts_date": "2026-02-08T10:00:00Z",
+                "expires_date": "2026-02-15T18:00:00Z"
+            }
+        )
+
+        # Assert
+        assert response.status_code == 201
+        todo = response.json()
+        assert todo["starts_date"] is not None
+        assert todo["expires_date"] is not None
+
+    def test_create_todo_default_status(self, authenticated_client):
+        """Test that default status is 'pending'."""
+        # Act
+        response = authenticated_client.post(
+            "/api/todos",
+            json={"title": "Default status task"}
+        )
+
+        # Assert
+        assert response.status_code == 201
+        todo = response.json()
+        assert todo["status"] == "pending"
+
+    def test_create_todo_with_description_only(self, authenticated_client):
+        """Test creating a TODO with title and description only."""
+        # Act
+        response = authenticated_client.post(
+            "/api/todos",
+            json={
+                "title": "Simple task",
+                "description": "This is a simple description"
+            }
+        )
+
+        # Assert
+        assert response.status_code == 201
+        todo = response.json()
+        assert todo["description"] == "This is a simple description"
+        assert todo["status"] == "pending"
+        assert todo["starts_date"] is None
+        assert todo["expires_date"] is None
+
+    def test_create_todo_response_includes_timestamps(self, authenticated_client):
+        """Test that response includes created_at and updated_at."""
+        # Act
+        response = authenticated_client.post(
+            "/api/todos",
+            json={"title": "Timestamp test"}
+        )
+
+        # Assert
+        assert response.status_code == 201
+        todo = response.json()
+        assert "created_at" in todo
+        assert "updated_at" in todo
+        assert todo["created_at"] is not None
+        assert todo["updated_at"] is not None
+
+    def test_create_multiple_todos_for_same_user(self, authenticated_client):
+        """Test creating multiple TODOs for the same user."""
+        # Act
+        response1 = authenticated_client.post(
+            "/api/todos",
+            json={"title": "First TODO"}
+        )
+        response2 = authenticated_client.post(
+            "/api/todos",
+            json={"title": "Second TODO"}
+        )
+
+        # Assert
+        assert response1.status_code == 201
+        assert response2.status_code == 201
+        todo1 = response1.json()
+        todo2 = response2.json()
+        assert todo1["id"] != todo2["id"]
+        assert todo1["user_id"] == todo2["user_id"]

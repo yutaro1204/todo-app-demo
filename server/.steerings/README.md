@@ -17,6 +17,13 @@ None yet.
 ## Completed
 
 ### Features
+- **[F003: Create TODO API](features/F003-create-todo-api.md)** ✅ Completed (2026-02-08)
+  - Status: All 16 acceptance criteria met
+  - Leveraged: Existing models, schemas, repository, service from F002
+  - Tests: 17 new integration tests
+  - Endpoint: POST /api/todos with full validation
+  - Features: Title/description validation, date validation, tag support, 201 Created response
+
 - **[F002: List TODOs API](features/F002-list-todos-api.md)** ✅ Completed (2026-02-08)
   - Status: All 14 acceptance criteria met
   - Models: Todo, Tag, TodoTag with database migration
