@@ -1,0 +1,3 @@
+[submodule "server/project-kernel"]
+	path = server/project-kernel
+	url = https://github.com/yutaro1204/project-kernel.git
