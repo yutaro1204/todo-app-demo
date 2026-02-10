@@ -1,3 +1,0 @@
-[submodule "server/.claude"]
-	path = server/.claude
-	url = https://github.com/yutaro1204/cc-dev-config.git
