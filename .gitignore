@@ -3,3 +3,24 @@
 .coverage
 .pytest_cache
 .ruff_cache
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Database
+*.db
+*.sqlite3
+postgres_data/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
